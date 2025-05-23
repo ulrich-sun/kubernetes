@@ -2,3 +2,4 @@ docker_versions:
   "22.04": "5:20.10.24~3-0~ubuntu-jammy"
   "20.04": "5:20.10.24~3-0~ubuntu-focal"
   "18.04": "5:20.10.24~3-0~ubuntu-bionic"
+  "24.04": "5:26.0.0-1~ubuntu.24.04~noble"
