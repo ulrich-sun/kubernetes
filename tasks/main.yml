@@ -81,7 +81,7 @@
     update_cache: true
   tags: docker
 
-- name: Créer le dossier /etc/apt/keyrings s'il n'existe pas
+- name: Créer dossier keyrings si nécessaire
   file:
     path: /etc/apt/keyrings
     state: directory
@@ -98,20 +98,21 @@
   args:
     creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
-- name: Supprimer la clé temporaire téléchargée
+- name: Supprimer la clé temporaire
   file:
     path: /tmp/k8s-release.key
     state: absent
 
-- name: Ajouter le dépôt Kubernetes
-  apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ k8s_version }}/deb/ /"
-    filename: kubernetes
-    state: present
+- name: Créer fichier sources.list Kubernetes
+  copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ k8s_version }}/deb/ /
 
-- name: Mise à jour du cache APT
+- name: Mettre à jour le cache APT
   apt:
     update_cache: yes
+
 - name: Installation de kubeadm, kubelet et kubectl
   apt:
     name:
