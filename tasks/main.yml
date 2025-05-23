@@ -87,16 +87,14 @@
     state: directory
     mode: '0755'
 
-- name: Télécharger la clé GPG Kubernetes et la convertir en keyring
-  shell: |
-    curl -fsSL https://pkgs.k8s.io/core:/stable:/{{ k8s_version }}/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-  args:
-    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-
-- name: Ajouter le dépôt Kubernetes
-  copy:
-    dest: /etc/apt/sources.list.d/kubernetes.list
-    content: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ k8s_version }}/deb/ /"
+- name: Add Kubernetes repository.
+  deb822_repository:
+    name: kubernetes
+    types: deb
+    uris: "{{ kubernetes_apt_repository }}"
+    suites: /
+    signed_by: "{{ kubernetes_apt_repository }}/Release.key"
+  register: kubernetes_repository
 
 - name: Mettre à jour le cache APT
   apt:
