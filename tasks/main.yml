@@ -127,6 +127,7 @@
 
 - name: Initialiser le cluster kubeadm
   become: true
+  become_user: root
   shell: kubeadm init --pod-network-cidr={{ k8s_cidr }} --cri-socket unix:///var/run/containerd/containerd.sock --ignore-preflight-errors=all
   args:
     creates: /etc/kubernetes/admin.conf
