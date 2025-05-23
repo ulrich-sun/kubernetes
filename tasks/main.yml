@@ -86,7 +86,7 @@
 - name: Activer kubelet
   ansible.builtin.include_role:
     name: k8s_setup
-  tasks_from: handlers/main.yml
+    tasks_from: handlers/main.yml
 
 - name: Générer la config containerd par défaut
   shell: containerd config default > /etc/containerd/config.toml
