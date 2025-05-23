@@ -2,4 +2,5 @@
 k8s_version: "v1.31"
 crictl_version: "v1.31.0"
 k8s_cidr: "10.244.0.0/16"
+kubernetes_apt_repository: "https://pkgs.k8s.io/core:/stable:/v1.31/deb/"
 
