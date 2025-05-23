@@ -126,9 +126,12 @@
   notify: Restart containerd
 
 - name: Initialiser le cluster kubeadm
-  shell: kubeadm init --pod-network-cidr={{ k8s_cidr }} --cri-socket unix:///var/run/containerd/containerd.sock
+  become: true
+  shell: kubeadm init --pod-network-cidr={{ k8s_cidr }} --cri-socket unix:///var/run/containerd/containerd.sock --ignore-preflight-errors=all
   args:
     creates: /etc/kubernetes/admin.conf
+  tags:
+    - kubernetes
 
 - name: Déployer Flannel
   become: true
