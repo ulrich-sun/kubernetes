@@ -86,17 +86,28 @@
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
-- name: Télécharger la clé GPG Kubernetes et la convertir en keyring
-  shell: |
-    curl -fsSL https://pkgs.k8s.io/core:/stable:/{{ k8s_version }} deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Télécharger la clé GPG Kubernetes
+  get_url:
+    url: "https://pkgs.k8s.io/core:/stable:/{{ k8s_version }}/deb/Release.key"
+    dest: "/tmp/k8s-release.key"
+    mode: '0644'
+
+- name: Convertir la clé GPG Kubernetes en keyring
+  command: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/k8s-release.key
   args:
     creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Supprimer la clé temporaire téléchargée
+  file:
+    path: /tmp/k8s-release.key
+    state: absent
+
 - name: Ajouter le dépôt Kubernetes
   apt_repository:
     repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ k8s_version }}/deb/ /"
     filename: kubernetes
     state: present
-
 
 - name: Mise à jour du cache APT
   apt:
