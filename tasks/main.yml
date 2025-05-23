@@ -25,11 +25,6 @@
   set_fact:
     ubuntu_version: "{{ ansible_distribution_version }}"
 
-- name: Sélection dynamique de la version Docker
-  set_fact:
-    selected_docker_version: "{{ docker_versions[ubuntu_version] }}"
-  when: docker_versions is defined
-
 - name: Téléchargement de crictl
   get_url:
     url: "https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ crictl_version }}/crictl-{{ crictl_version }}-linux-amd64.tar.gz"
@@ -57,6 +52,11 @@
     repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     filename: docker
     state: present
+
+- name: Sélection dynamique de la version Docker
+  set_fact:
+    selected_docker_version: "{{ docker_versions[ubuntu_version] }}"
+  when: docker_versions is defined
 
 - name: Installation de Docker et containerd (multi-distribution)
   apt:
