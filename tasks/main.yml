@@ -113,10 +113,13 @@
 - name: Marquer kubelet, kubeadm, kubectl en hold
   command: apt-mark hold kubelet kubeadm kubectl
 
+# - name: Activer kubelet
+#   ansible.builtin.include_role:
+#     name: k8s_setup
+#     tasks_from: handlers/main.yml
+
 - name: Activer kubelet
-  ansible.builtin.include_role:
-    name: k8s_setup
-    tasks_from: handlers/main.yml
+  shell: systemctl enable --now kubelet
 
 - name: Générer la config containerd par défaut
   shell: containerd config default > /etc/containerd/config.toml
