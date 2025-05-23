@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: Ulrich NOUMSI
+  description: "Installation de Kubernetes avec Docker et containerd"
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: Ubuntu
+      versions:
+        - 20.04
+        - 22.04
+        - 24.04
+    - name: Debian
+      versions:
+        - 12
+        - 11
+
+dependencies: []
