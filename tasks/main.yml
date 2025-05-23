@@ -1,0 +1,113 @@
+---
+- name: Mise à jour et installation des paquets de base
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - software-properties-common
+      - git
+    update_cache: true
+    upgrade: dist
+
+- name: Détection de la version Ubuntu
+  set_fact:
+    ubuntu_version: "{{ ansible_distribution_version }}"
+
+- name: Sélection dynamique de la version Docker
+  set_fact:
+    selected_docker_version: "{{ docker_versions[ubuntu_version] }}"
+  when: docker_versions is defined
+
+- name: Téléchargement de crictl
+  get_url:
+    url: "https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ crictl_version }}/crictl-{{ crictl_version }}-linux-amd64.tar.gz"
+    dest: /tmp/crictl.tar.gz
+
+- name: Décompression de crictl
+  unarchive:
+    src: /tmp/crictl.tar.gz
+    dest: /usr/local/bin
+    remote_src: yes
+
+- name: Supprimer l’archive crictl
+  file:
+    path: /tmp/crictl.tar.gz
+    state: absent
+
+- name: Ajout de la clé Docker
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    keyring: /etc/apt/keyrings/docker.asc
+    state: present
+
+- name: Ajout du dépôt Docker
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    filename: docker
+    state: present
+
+- name: Installation de Docker et containerd (multi-distribution)
+  apt:
+    name:
+      - "docker-ce={{ selected_docker_version }}"
+      - "docker-ce-cli={{ selected_docker_version }}"
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    update_cache: true
+  tags: docker
+
+- name: Ajout de la clé Kubernetes
+  apt_key:
+    url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
+    keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    state: present
+
+- name: Ajout du dépôt Kubernetes
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /"
+    filename: kubernetes
+    state: present
+
+- name: Installation de kubeadm, kubelet et kubectl
+  apt:
+    name:
+      - "kubelet={{ k8s_version }}-1.1"
+      - "kubeadm={{ k8s_version }}-1.1"
+      - "kubectl={{ k8s_version }}-1.1"
+    update_cache: true
+
+- name: Marquer kubelet, kubeadm, kubectl en hold
+  command: apt-mark hold kubelet kubeadm kubectl
+
+- name: Activer kubelet
+  ansible.builtin.include_role:
+    name: k8s_setup
+  tasks_from: handlers/main.yml
+
+- name: Générer la config containerd par défaut
+  shell: containerd config default > /etc/containerd/config.toml
+  notify: Restart containerd
+
+- name: Initialiser le cluster kubeadm
+  shell: kubeadm init --pod-network-cidr={{ k8s_cidr }} --cri-socket unix:///var/run/containerd/containerd.sock
+  args:
+    creates: /etc/kubernetes/admin.conf
+
+- name: Déployer Flannel
+  become: true
+  become_user: ubuntu
+  shell: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/v0.23.0/Documentation/kube-flannel.yml
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+
+# - name: Supprimer le taint du nœud master
+  shell: |
+    kubectl taint nodes $(kubectl get nodes --selector='node-role.kubernetes.io/control-plane' \
+    --no-headers -o custom-columns=NAME:.metadata.name) node-role.kubernetes.io/control-plane- || true
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+
