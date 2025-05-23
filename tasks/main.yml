@@ -1,6 +1,15 @@
 ---
-- name: Mise à jour et installation des paquets de base
-  apt:
+- name: Mettre à jour les index des paquets
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+# - name: Effectuer une mise à niveau complète
+#   ansible.builtin.apt:
+#     upgrade: dist
+
+- name: Installer les paquets de base
+  ansible.builtin.apt:
     name:
       - apt-transport-https
       - ca-certificates
@@ -9,8 +18,8 @@
       - lsb-release
       - software-properties-common
       - git
-    update_cache: true
-    upgrade: dist
+    state: present
+
 
 - name: Détection de la version Ubuntu
   set_fact:
