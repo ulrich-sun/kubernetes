@@ -41,17 +41,24 @@
     path: /tmp/crictl.tar.gz
     state: absent
 
-- name: Ajout de la clé Docker
-  ansible.builtin.apt_key:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    keyring: /etc/apt/keyrings/docker.asc
-    state: present
+- name: Créer le dossier /etc/apt/keyrings
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
 
-- name: Ajout du dépôt Docker
-  apt_repository:
-    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-    filename: docker
+- name: Télécharger la clé GPG de Docker
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.gpg
+    mode: '0644'
+
+- name: Ajouter le dépôt Docker
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
+    filename: docker
+
 
 - name: Sélection dynamique de la version Docker
   set_fact:
@@ -114,9 +121,9 @@
     KUBECONFIG: /home/ubuntu/.kube/config
 
 # - name: Supprimer le taint du nœud master
-  shell: |
-    kubectl taint nodes $(kubectl get nodes --selector='node-role.kubernetes.io/control-plane' \
-    --no-headers -o custom-columns=NAME:.metadata.name) node-role.kubernetes.io/control-plane- || true
-  environment:
-    KUBECONFIG: /home/ubuntu/.kube/config
+  # shell: |
+  #   kubectl taint nodes $(kubectl get nodes --selector='node-role.kubernetes.io/control-plane' \
+  #   --no-headers -o custom-columns=NAME:.metadata.name) node-role.kubernetes.io/control-plane- || true
+  # environment:
+  #   KUBECONFIG: /home/ubuntu/.kube/config
 
