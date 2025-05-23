@@ -108,6 +108,7 @@
       - "kubeadm={{ k8s_version }}-1.1"
       - "kubectl={{ k8s_version }}-1.1"
     update_cache: true
+    allow_downgrade: yes
 
 - name: Marquer kubelet, kubeadm, kubectl en hold
   command: apt-mark hold kubelet kubeadm kubectl
