@@ -81,18 +81,28 @@
     update_cache: true
   tags: docker
 
-- name: Ajout de la clé Kubernetes
-  apt_key:
-    url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
-    keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-    state: present
+- name: Créer le dossier /etc/apt/keyrings s'il n'existe pas
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
 
-- name: Ajout du dépôt Kubernetes
+- name: Télécharger la clé GPG Kubernetes (et la convertir)
+  shell: |
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key | \
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Ajouter le dépôt Kubernetes
   apt_repository:
     repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /"
     filename: kubernetes
     state: present
-
+  tags: kubernetes
+- name: Mise à jour du cache APT
+  apt:
+    update_cache: yes
 - name: Installation de kubeadm, kubelet et kubectl
   apt:
     name:
